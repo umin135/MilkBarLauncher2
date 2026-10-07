@@ -1,4 +1,4 @@
-﻿using BOTWM.Server.DataTypes;
+using BOTWM.Server.DataTypes;
 using BOTWM.Server.DTO;
 using Newtonsoft.Json;
 using System.Security.Cryptography;
@@ -283,33 +283,33 @@ namespace BOTWM.Server.JSONBuilder
                 AddBytes(BitConverter.GetBytes((short)original));
             else if (original.GetType() == typeof(string))
             { 
-                ByteData.Add((byte)((string)original).Length);
+                ByteData.Add((byte)Encoding.UTF8.GetByteCount((string)original));
                 AddBytes(Encoding.UTF8.GetBytes((string)original), false);
             }
             else if(original.GetType() == typeof(ConnectDTO))
             {
                 ConnectDTO origDTO = (ConnectDTO)original;
 
-                ByteData.Add((byte)((string)origDTO.Name).Length);
+                ByteData.Add((byte)Encoding.UTF8.GetByteCount((string)origDTO.Name));
                 AddBytes(Encoding.UTF8.GetBytes((string)origDTO.Name), false);
 
-                ByteData.Add((byte)((string)origDTO.Password).Length);
+                ByteData.Add((byte)Encoding.UTF8.GetByteCount((string)origDTO.Password));
                 AddBytes(Encoding.UTF8.GetBytes((string)origDTO.Password), false);
 
                 string modelType = origDTO.ModelData.ModelType.ToString();
 
-                ByteData.Add((byte)modelType.Length);
+                ByteData.Add((byte)Encoding.UTF8.GetByteCount(modelType));
                 AddBytes(Encoding.UTF8.GetBytes(modelType), false);
 
                 if (origDTO.ModelData.ModelType < 2)
                 { 
-                    AddBytes(BitConverter.GetBytes((short)origDTO.ModelData.Model.Length));
+                    AddBytes(BitConverter.GetBytes((short)Encoding.UTF8.GetByteCount(origDTO.ModelData.Model)));
                     AddBytes(Encoding.UTF8.GetBytes((string)origDTO.ModelData.Model), false);
                 }
                 else
                 {
                     string MiiData = JsonConvert.SerializeObject(origDTO.ModelData.Mii);
-                    AddBytes(BitConverter.GetBytes((short)MiiData.Length));
+                    AddBytes(BitConverter.GetBytes((short)Encoding.UTF8.GetByteCount(MiiData)));
                     AddBytes(Encoding.UTF8.GetBytes(MiiData), false);
                 }
             }
@@ -320,7 +320,7 @@ namespace BOTWM.Server.JSONBuilder
 
                 if(dtoObj.ModelType < 2)
                 {
-                    ByteData.Add((byte)(dtoObj.Model).Length);
+                    ByteData.Add((byte)Encoding.UTF8.GetByteCount(dtoObj.Model));
                     AddBytes(Encoding.UTF8.GetBytes(dtoObj.Model), false);
                 }
                 else
