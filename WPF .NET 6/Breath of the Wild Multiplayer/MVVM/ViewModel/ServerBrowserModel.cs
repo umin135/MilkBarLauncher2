@@ -267,6 +267,10 @@ namespace Breath_of_the_Wild_Multiplayer.MVVM.ViewModel
                         // We found that the game is only capable of having NPCs instead of Link. Therefore, we only change Link's model if it is an NPC
                         if (charModel.Model.StartsWith("Npc_"))
                             await Task.Run(() => GameFilesModifier.ModifyGameROMPlayerModel(charModel.Model, charModel.Model, true));
+                        // MilkBar2: "MP_<name>" player models (Jugador-style folder, see MILKBAR2.md) replace only the body
+                        // and keep Link's armor setup; aapmLib maps each armor piece to the "MP_<name>_MP" folder.
+                        else if (charModel.Model.StartsWith("MP_"))
+                            await Task.Run(() => GameFilesModifier.ModifyGameROMPlayerModel(charModel.Model, charModel.Model, false));
                         else
                             await Task.Run(() => GameFilesModifier.ModifyGameROMPlayerModel("Link", "Link", false));
                         break;
