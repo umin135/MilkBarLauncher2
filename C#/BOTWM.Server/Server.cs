@@ -1,4 +1,4 @@
-﻿using BOTWM.Server.DTO;
+using BOTWM.Server.DTO;
 using BOTWM.Server.HelperTypes;
 using BOTWM.Server.ServerClasses;
 using Newtonsoft.Json;
@@ -141,6 +141,7 @@ namespace BOTWM.Server
             List<byte> data = new List<byte>();
             int totalLength = 0;
             int retries = 0;
+            int zeroReads = 0;
             Stopwatch RetryWatch = new Stopwatch();
 
             bool ClientConnected = true;
@@ -154,24 +155,35 @@ namespace BOTWM.Server
                     if (retries == 0)
                         RetryWatch.Restart();
 
-                    totalLength += connection.Receive(info, 0, info.Length, 0);
+                    // patched: append only the bytes actually received and cut exactly one message.
+                    // Clients send fixed-size messages: ping (type 1) = 6144 bytes, everything else = 7168.
+                    // The original appended the whole 10240-byte buffer, so a message split by TCP
+                    // (high ping / relayed Hamachi) was corrupted ("Error receiving message", bad data).
+                    int received = data.Count >= 6144 && data.Count >= (data[0] == 1 ? 6144 : 7168) ? 0 : connection.Receive(info, 0, info.Length, 0);
+                    if (received > 0)
+                    {
+                        data.AddRange(new ArraySegment<byte>(info, 0, received));
+                        zeroReads = 0;
+                    }
+                    totalLength = data.Count;
+                    int expected = totalLength > 0 && data[0] == 1 ? 6144 : 7168;
 
-                    data.AddRange(info.ToList());
-
-                    if (totalLength < 6144)
+                    if (totalLength < expected)
                     {
                         retries++;
 
-                        if (retries > 10 && totalLength == 0)
+                        if (received == 0 && ++zeroReads > 10)
                             throw new ApplicationException("Connection lost with player.");
 
                         continue;
                     }
 
-                    Tuple<MessageType, object> ClientMessage = new JSONBuilder.JSONBuilder().BuildFromBytes(data.ToArray());
+                    byte[] message = new byte[Math.Max(SIZE, expected)];
+                    data.CopyTo(0, message, 0, expected);
+                    data.RemoveRange(0, expected);
+                    totalLength = data.Count;
 
-                    data.Clear();
-                    totalLength = 0;
+                    Tuple<MessageType, object> ClientMessage = new JSONBuilder.JSONBuilder().BuildFromBytes(message);
 
                     if(retries > 0)
                     {
