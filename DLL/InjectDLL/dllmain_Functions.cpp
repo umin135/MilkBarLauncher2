@@ -1701,7 +1701,9 @@ void Main::mainServerLoop()
         if(!Game::GameInstance->IsGamePaused)
             Memory::MultiplayerQuest::changeMQuestPing(static_cast<int>(ping));
 
-        int timeToSleep = (1000 / serverResponse->NetworkData->SerializationRate) - ping;
+        // patched: a zero rate (corrupt/empty server data) used to crash Cemu with a divide by zero
+        int serializationRate = serverResponse->NetworkData->SerializationRate > 0 ? serverResponse->NetworkData->SerializationRate : 60;
+        int timeToSleep = (1000 / serializationRate) - ping;
         
         if (timeToSleep > 0)
         {

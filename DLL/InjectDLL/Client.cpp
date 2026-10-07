@@ -81,24 +81,38 @@ void Client::sendBytes(byte Message[7168])
 
 void Client::receiveBytes(byte* Output)
 {
-    int totalReceived = 0;
-    int received = recv(server, buffer, 7168, 0);
-    short msgLength = 0;
+    // patched: read exactly [u16 length][payload]. The original copied `received - 2` bytes, so a
+    // closed connection (recv == 0/-1) became a huge memcpy and crashed Cemu; it also assumed the
+    // length prefix arrived in the first packet. On failure Output stays zeroed.
+    memset(Output, 0, 7168);
 
+    int got = 0;
+    while (got < 2)
+    {
+        int r = recv(server, buffer + got, 2 - got, 0);
+        if (r <= 0) return;
+        got += r;
+    }
+
+    unsigned short msgLength = 0;
     memcpy(&msgLength, &buffer[0], 2);
 
-    memcpy(&Output[0], &buffer[0] + 2, received - 2);
-
-    totalReceived += received - 2;
-
-    //memset(buffer, 0, sizeof(buffer));
-
-    while (totalReceived < msgLength)
+    int total = 0;
+    while (total < msgLength)
     {
-        received = recv(server, buffer, msgLength, 0);
-        memcpy(&Output[0] + totalReceived, &buffer[0], received);
-        //memset(buffer, 0, sizeof(buffer));
-        totalReceived += received;
+        int want = msgLength - total;
+        if (total < 7168)
+        {
+            int r = recv(server, (char*)Output + total, (want < 7168 - total) ? want : 7168 - total, 0);
+            if (r <= 0) return;
+            total += r;
+        }
+        else
+        {
+            int r = recv(server, buffer, (want < 7168) ? want : 7168, 0);  // discard what doesn't fit
+            if (r <= 0) return;
+            total += r;
+        }
     }
 }
 
