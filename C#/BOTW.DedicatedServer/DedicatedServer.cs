@@ -394,7 +394,9 @@ namespace BOTW.DedicatedServer
             foreach (string resource in Resources)
             {
                 Stream s = Assembly.GetExecutingAssembly().GetManifestResourceStream(resource);
-                string output = $"{AppdataFolder}\\{resource.Replace("BOTW.DedicatedServer.AppdataFiles.", "")}";
+                // MilkBar2: the root namespace became BOTWM.*, so the old fixed prefix no longer matched and the
+                // files were written as "BOTWM.DedicatedServer.AppdataFiles.X.txt" (server failed to find X.txt).
+                string output = $"{AppdataFolder}\\{resource.Substring(resource.IndexOf("AppdataFiles.") + "AppdataFiles.".Length)}";
                 using (FileStream AppdataFile = new FileStream(output, FileMode.Create))
                 {
                     byte[] b = new byte[s.Length + 1];
