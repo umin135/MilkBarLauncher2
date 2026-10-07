@@ -142,6 +142,26 @@ void Player::PThread()
 					//this->Bumii->WriteMiiData(1033785125, 598924800);
 					this->Equipment->SetArmor();
 				}
+				else if (this->Model.ModelType == 1 && this->Model.Model.rfind("MP_", 0) == 0)
+				{
+					// Custom player model folder built like the Jugador model.
+					// "MP_Linkle:Name"             -> armor sync in folder MP_Linkle
+					// "MP_Linkle@001-001-001:Name" -> fixed outfit head-upper-lower (0 = default piece)
+					std::string folder = this->Model.Model.substr(0, this->Model.Model.find(':'));
+					int head = -1, upper = -1, lower = -1;
+					size_t at = folder.find('@');
+					if (at != std::string::npos)
+					{
+						if (sscanf_s(folder.c_str() + at + 1, "%d-%d-%d", &head, &upper, &lower) != 3)
+							head = upper = lower = -1;
+						folder = folder.substr(0, at);
+					}
+					// "<folder>" is the small local-player model (launcher swaps GameROMPlayer to it);
+					// the Jugador-style units used for remote players live in "<folder>_MP".
+					folder += "_MP";
+					Logging::LoggerService::LogDebug("Setting up " + std::to_string(this->PlayerNumber) + " armor in " + folder + " (" + std::to_string(head) + "," + std::to_string(upper) + "," + std::to_string(lower) + ")...", __FUNCTION__);
+					this->Equipment->SetArmor(folder, head, upper, lower);
+				}
 				else if (this->Model.ModelType == 1)
 				{
 					Logging::LoggerService::LogDebug("Setting up " + std::to_string(this->PlayerNumber) + " model...", __FUNCTION__);

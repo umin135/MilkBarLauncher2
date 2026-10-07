@@ -95,9 +95,17 @@ namespace DataTypes
 			Mutex.unlock();
 		}
 
-		void SetArmor()
+		// folder: model folder holding the Jugador-style units (Head/Chest/EmptyModel/MP_Armor_*).
+		// Custom player models (e.g. MP_Linkle) reuse the same unit names in their own folder.
+		// head/upper/lower >= 0 force a fixed outfit (0 = default piece) instead of the player's synced armor.
+		void SetArmor(std::string folder = "Jugador1ModelNameLongForASpecificReason", int head = -1, int upper = -1, int lower = -1)
 		{
-			std::string BASE_FOLDER = "Jugador1ModelNameLongForASpecificReason";
+			short Head = head >= 0 ? head : LastKnown->Head;
+			short Upper = upper >= 0 ? upper : LastKnown->Upper;
+			short Lower = lower >= 0 ? lower : LastKnown->Lower;
+
+			const std::string DEFAULT_FOLDER = "Jugador1ModelNameLongForASpecificReason";
+			std::string BASE_FOLDER = folder.size() <= DEFAULT_FOLDER.size() ? folder : DEFAULT_FOLDER;
 			std::string BASE_DEFAULT = "Jugador1ModelNameLongForASpecificReasonHead";
 			std::string CHEST_DEFAULT = "Jugador1ModelNameLongForASpecificReasonChest";
 			std::string UPPER_DEFAULT = "Jugador1ModelNameLongForASpecificReasonHelmet";
@@ -109,9 +117,9 @@ namespace DataTypes
 			std::string HEAD_DEFAULT_ARMOR = "MP_Armor_Default_Head";
 
 			std::string BaseToWrite = BASE_DEFAULT;
-			std::string UpperToWrite = LastKnown->Upper == 0 ? UPPER_DEFAULT_ARMOR : "MP_Armor_" + NumToStr(LastKnown->Upper) + "_Upper";
-			std::string LowerToWrite = LastKnown->Lower == 0 ? LOWER_DEFAULT_ARMOR : "MP_Armor_" + NumToStr(LastKnown->Lower) + "_Lower";
-			std::string HeadToWrite = LastKnown->Head == 0 ? HEAD_DEFAULT_ARMOR : "MP_Armor_" + NumToStr(LastKnown->Head) + "_Head";
+			std::string UpperToWrite = Upper == 0 ? UPPER_DEFAULT_ARMOR : "MP_Armor_" + NumToStr(Upper) + "_Upper";
+			std::string LowerToWrite = Lower == 0 ? LOWER_DEFAULT_ARMOR : "MP_Armor_" + NumToStr(Lower) + "_Lower";
+			std::string HeadToWrite = Head == 0 ? HEAD_DEFAULT_ARMOR : "MP_Armor_" + NumToStr(Head) + "_Head";
 			std::string ChestToWrite = CHEST_DEFAULT;
 
 			if (UpperToWrite != "" && UpperToWrite != UPPER_DEFAULT_ARMOR)
@@ -132,7 +140,7 @@ namespace DataTypes
 						return;
 					}
 
-					Memory::write_string(ArmorAddrs.Folder, BASE_FOLDER, BASE_FOLDER.size() + 2, __FUNCTION__);
+					Memory::write_string(ArmorAddrs.Folder, BASE_FOLDER, DEFAULT_FOLDER.size() + 2, __FUNCTION__);
 					Memory::write_string(ArmorAddrs.Face, BaseToWrite, BASE_DEFAULT.size() + 2, __FUNCTION__);
 					Memory::write_string(ArmorAddrs.Chest, ChestToWrite, CHEST_DEFAULT.size() + 2, __FUNCTION__);
 					Memory::write_string(ArmorAddrs.Head, HeadToWrite, HEAD_DEFAULT.size() + 2, __FUNCTION__);
